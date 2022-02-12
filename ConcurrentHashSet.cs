@@ -8,13 +8,15 @@ namespace Unknown6656.Generics;
 
 
 public class ConcurrentHashSet<T>
-    : IEnumerable<T>
+    : ISet<T>
+    , IReadOnlyCollection<T>
     , IDisposable
 {
     private readonly ReaderWriterLockSlim _lock = new(LockRecursionPolicy.SupportsRecursion);
     private readonly HashSet<T> _hashSet = new();
 
 
+    /// <inheritdoc cref="HashSet{T}.Count"/>
     public int Count
     {
         get
@@ -34,6 +36,8 @@ public class ConcurrentHashSet<T>
     }
 
     public bool IsDisposed { get; private set; }
+
+    public bool IsReadOnly { get; } = false;
 
 
     ~ConcurrentHashSet() => Dispose(false);
@@ -61,6 +65,7 @@ public class ConcurrentHashSet<T>
         GC.SuppressFinalize(this);
     }
 
+    /// <inheritdoc cref="HashSet{T}.Add(T)"/>
     public bool Add(T item)
     {
         _lock.EnterWriteLock();
@@ -76,6 +81,9 @@ public class ConcurrentHashSet<T>
         }
     }
 
+    void ICollection<T>.Add(T item) => Add(item);
+
+    /// <inheritdoc cref="HashSet{T}.Clear"/>
     public void Clear()
     {
         _lock.EnterWriteLock();
@@ -91,6 +99,7 @@ public class ConcurrentHashSet<T>
         }
     }
 
+    /// <inheritdoc cref="HashSet{T}.Contains(T)"/>
     public bool Contains(T item)
     {
         _lock.EnterReadLock();
@@ -106,6 +115,7 @@ public class ConcurrentHashSet<T>
         }
     }
 
+    /// <inheritdoc cref="HashSet{T}.Remove(T)"/>
     public bool Remove(T item)
     {
         _lock.EnterWriteLock();
@@ -152,4 +162,22 @@ public class ConcurrentHashSet<T>
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+
+
+
+
+    ///////////////////////////////////////////////////////////////////// TODO /////////////////////////////////////////////////////////////////////
+
+    void ISet<T>.ExceptWith(IEnumerable<T> other) => throw new NotImplementedException();
+    void ISet<T>.IntersectWith(IEnumerable<T> other) => throw new NotImplementedException();
+    bool ISet<T>.IsProperSubsetOf(IEnumerable<T> other) => throw new NotImplementedException();
+    bool ISet<T>.IsProperSupersetOf(IEnumerable<T> other) => throw new NotImplementedException();
+    bool ISet<T>.IsSubsetOf(IEnumerable<T> other) => throw new NotImplementedException();
+    bool ISet<T>.IsSupersetOf(IEnumerable<T> other) => throw new NotImplementedException();
+    bool ISet<T>.Overlaps(IEnumerable<T> other) => throw new NotImplementedException();
+    bool ISet<T>.SetEquals(IEnumerable<T> other) => throw new NotImplementedException();
+    void ISet<T>.SymmetricExceptWith(IEnumerable<T> other) => throw new NotImplementedException();
+    void ISet<T>.UnionWith(IEnumerable<T> other) => throw new NotImplementedException();
+    void ICollection<T>.CopyTo(T[] array, int arrayIndex) => throw new NotImplementedException();
 }
