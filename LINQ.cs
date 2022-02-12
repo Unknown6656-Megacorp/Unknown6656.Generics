@@ -1,12 +1,13 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using System;
 
 using static System.Math;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Unknown6656.Generics;
 
@@ -291,14 +292,6 @@ public static partial class LINQ
     public static IEnumerable<(U, T)> Swap<T, U>(this IEnumerable<(T, U)> collection) => collection.Select(Swap);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlyIndexer<K, V> GetReadOnlyIndexer<K, V>(this IReadOnlyDictionary<K, V> dictionary)
-        where K : notnull => new(k => dictionary[k]);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Indexer<K, V> GetIndexer<K, V>(this IDictionary<K, V> dictionary)
-        where K : notnull => new(k => dictionary[k], (k, v) => dictionary[k] = v);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IEnumerable<IEnumerable<T>> PowerSet<T>(this T[] collection)
     {
         T[][] set = new T[1 << collection.Length][];
@@ -329,9 +322,13 @@ public static partial class LINQ
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string StringJoinLines<T>(this IEnumerable<T> collection, string line_break = "\n") => collection.StringJoin(line_break);
 
+    /// <inheritdoc cref="string.Join{T}(string?, IEnumerable{T})"/>
+    /// <param name="collection">The collection to be joined.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string StringJoin<T>(this IEnumerable<T> collection, string separator) => string.Join(separator, collection);
 
+    /// <inheritdoc cref="string.Concat{T}(IEnumerable{T})"/>
+    /// <param name="collection">The collection to be joined.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string StringConcat<T>(this IEnumerable<T> collection) => string.Concat(collection);
 
@@ -796,6 +793,39 @@ public static partial class LINQ
         return true;
     }
 
+
+    /// <summary>
+    /// Tries to execute the given <paramref name="action"/> for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void TryDo<T>(this IEnumerable<T> collection, Action<T> action)
+    {
+        foreach (T item in collection)
+            TryDo(() => action(item));
+    }
+
+    /// <summary>
+    /// Tries to execute the given <paramref name="action"/> for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe void TryDo<T>(this IEnumerable<T> collection, delegate*<T, void> action)
+    {
+        foreach (T item in collection)
+            TryDo(() => action(item));
+    }
+
+    /// <summary>
+    /// Executes the given <paramref name="action"/> for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Do<T>(this IEnumerable<T> collection, Action<T> action)
     {
@@ -803,6 +833,12 @@ public static partial class LINQ
             action(item);
     }
 
+    /// <summary>
+    /// Executes the given <paramref name="action"/> for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe void Do<T>(this IEnumerable<T> collection, delegate*<T, void> action)
     {
@@ -810,15 +846,47 @@ public static partial class LINQ
             action(item);
     }
 
-    public static int GetHashCode<T>(IEnumerable<T> values) => GetHashCode(values.ToArray());
+    /// <summary>
+    /// Executes the given <paramref name="action"/> in parallel for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DoInParallel<T>(this IEnumerable<T> collection, Action<T> action) => Parallel.ForEach(collection, action);
 
-    public static int GetHashCode<T>(params T[] arr)
+    /// <summary>
+    /// Executes the given <paramref name="action"/> in parallel for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DoInParallel<T>(this IEnumerable<T> collection, Action<T> action, ParallelOptions options) => Parallel.ForEach(collection, options, action);
+
+    /// <summary>
+    /// Deterministically computes the hash code of the given collection.
+    /// The hashcode is dependent on each item in the collection, as well as their order.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The input collection.</param>
+    /// <returns>The computed hash code.</returns>
+    public static int GetHashCode<T>(IEnumerable<T> collection) => GetHashCode(collection as T[] ?? collection.ToArray());
+
+    /// <summary>
+    /// Deterministically computes the hash code of the given collection.
+    /// The hashcode is dependent on each item in the collection, as well as their order.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The input collection.</param>
+    /// <returns>The computed hash code.</returns>
+    public static int GetHashCode<T>(params T[] collection)
     {
-        int hc = arr.Length;
+        int code = collection.Length;
 
-        foreach (T elem in arr)
-            hc = HashCode.Combine(hc, elem);
+        foreach (T elem in collection)
+            code = HashCode.Combine(code, elem);
 
-        return hc;
+        return code;
     }
 }

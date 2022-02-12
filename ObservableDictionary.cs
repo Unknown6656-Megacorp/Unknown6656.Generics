@@ -1,10 +1,11 @@
 ﻿using System.Collections.Specialized;
+using System.Collections.ObjectModel;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics;
-using System.ComponentModel;
-using System.Linq;
 
 namespace Unknown6656.Generics;
 
@@ -25,8 +26,12 @@ public class ObservableDictionary<TKey, TValue>
     private readonly IDictionary<TKey, TValue> _dictionary;
 
 
+    /// <inheritdoc cref="Dictionary{TKey, TValue}.Count"/>
     public int Count => _dictionary.Count;
 
+    /// <summary>
+    /// Indicates whether the dictionary has been marked as read-only, i.e. its values cannot be changed after initial assignment.
+    /// </summary>
     public bool IsReadOnly => _dictionary.IsReadOnly;
 
     /// <summary>
@@ -53,11 +58,15 @@ public class ObservableDictionary<TKey, TValue>
     }
 
 
-    /// <summary>Event raised when the collection changes.</summary>
-    public event NotifyCollectionChangedEventHandler? CollectionChanged = delegate { };
+    /// <summary>
+    /// Event raised when the collection changes.
+    /// </summary>
+    public event NotifyCollectionChangedEventHandler? CollectionChanged;
 
-    /// <summary>Event raised when a property on the collection changes.</summary>
-    public event PropertyChangedEventHandler? PropertyChanged = delegate { };
+    /// <summary>
+    /// Event raised when a property on the collection changes.
+    /// </summary>
+    public event PropertyChangedEventHandler? PropertyChanged;
 
 
     /// <summary>
@@ -69,8 +78,7 @@ public class ObservableDictionary<TKey, TValue>
     }
 
     /// <summary>
-    /// Initializes an instance of the class using another dictionary as 
-    /// the key/value store.
+    /// Initializes an instance of the class using another dictionary as the key/value store.
     /// </summary>
     public ObservableDictionary(IDictionary<TKey, TValue> dictionary) => _dictionary = dictionary;
 
@@ -159,8 +167,16 @@ public class ObservableDictionary<TKey, TValue>
     #endregion
     #region ICollection<KeyValuePair<TKey,TValue>> Members
 
+    /// <summary>
+    /// Adds the given key-value-pair to the dictionary.
+    /// </summary>
+    /// <param name="item">The key-value-pair to be added.</param>
     public void Add(KeyValuePair<TKey, TValue> item) => AddWithNotification(item);
 
+    /// <inheritdoc cref="IDictionary.Clear"/>
+    /// <summary>
+    /// Removes all existing items from the dictionary.
+    /// </summary>
     public void Clear()
     {
         _dictionary.Clear();
@@ -171,10 +187,13 @@ public class ObservableDictionary<TKey, TValue>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Values)));
     }
 
+    /// <inheritdoc cref="ICollection{T}.Contains(T)"/>
     public bool Contains(KeyValuePair<TKey, TValue> item) => _dictionary.Contains(item);
 
+    /// <inheritdoc cref="ICollection{T}.CopyTo(T[], int)"/>
     public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) => _dictionary.CopyTo(array, arrayIndex);
 
+    /// <inheritdoc cref="ICollection{T}.Remove(T)"/>
     public bool Remove(KeyValuePair<TKey, TValue> item) => RemoveWithNotification(item.Key);
 
     #endregion
@@ -185,4 +204,10 @@ public class ObservableDictionary<TKey, TValue>
     IEnumerator IEnumerable.GetEnumerator() => _dictionary.GetEnumerator();
 
     #endregion
+
+    public static implicit operator ObservableDictionary<TKey, TValue>(Dictionary<TKey, TValue> dictionary) => new(dictionary);
+
+    public static implicit operator ObservableDictionary<TKey, TValue>(ReadOnlyDictionary<TKey, TValue> dictionary) => new(dictionary);
+
+    public static implicit operator ObservableDictionary<TKey, TValue>(ConcurrentDictionary<TKey, TValue> dictionary) => new(dictionary);
 }
