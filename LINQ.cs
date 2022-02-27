@@ -340,7 +340,7 @@ public static partial class LINQ
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T[][] PartitionByArraySize<T>(this IEnumerable<T> collection, int max_items_per_array)
     {
-        T[] items = collection.ToArray();
+        T[] items = collection as T[] ?? collection.ToArray();
         int arr_count = items.Length / max_items_per_array;
 
         while (arr_count * max_items_per_array < items.Length)
@@ -361,7 +361,7 @@ public static partial class LINQ
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T[][] PartitionByArrayCount<T>(this IEnumerable<T> collection, int number_of_sets)
     {
-        T[] items = collection.ToArray();
+        T[] items = collection as T[] ?? collection.ToArray();
         T[][] sets = new T[number_of_sets][];
         int items_per_set = items.Length / number_of_sets;
 
@@ -422,7 +422,7 @@ public static partial class LINQ
     public static IEnumerable<T> Slice<T>(this IEnumerable<T> coll, Index start, Index end) => coll.Slice(start..end);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] Slice<T>(this IEnumerable<T> coll, Range range) => coll.ToArray()[range];
+    public static T[] Slice<T>(this IEnumerable<T> collection, Range range) => (collection as T[] ?? collection.ToArray())[range];
 
     public static (List<T> @false, List<T> @true) Partition<T>(this IEnumerable<T> coll, Predicate<T> pred)
     {
