@@ -12,6 +12,9 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 using System.Runtime.CompilerServices;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
 using System;
 
 namespace Unknown6656.Generics;
@@ -29,7 +32,7 @@ public static unsafe partial class LINQ
         maxsize = int.Parse(File.ReadAllText(path).Trim()) + 1;
     }
     catch { }
-    
+
     IEnumerable<int> r(int f, int t) => Enumerable.Range(f, t);
 
     for (int dim = 2; dim <= maxsize; ++dim)
@@ -263,7 +266,144 @@ public static unsafe partial class LINQ
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void InvokeAction<<#=types#>>(void* pointer<#=apars#>) =>
         ToActionPointer<<#=types#>>(pointer)(<#=aargs#>);
+
 <#
+        if (dim >= 2)
+        {
+#>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T[<#=new string(',', dim - 1)#>] Reshape<T>(this IEnumerable<T> collection, <#=string.Join(", ", r(1, dim).Select(i => "int dim" + i))#>)
+    {
+        T[] items = collection as T[] ?? collection.ToArray();
+        int outsize = <#=string.Join(" * ", r(1, dim).Select(i => "dim" + i))#>;
+
+        if (outsize < items.Length)
+            throw new ArgumentException($"The given input collection has a length of {items.Length}, which is less than the required length of {outsize} = {<#=string.Join("} x {", r(1, dim).Select(i => "dim" + i))#>}.", nameof(collection));
+
+        T[<#=new string(',', dim - 1)#>] reshaped = new T[<#=string.Join(", ", r(1, dim).Select(i => "dim" + i))#>];
+
+        Parallel.For(0, outsize, i => {
+<#
+            for (int i = 1; i <= dim; ++i)
+            {
+                string idx = "i";
+
+                for (int j = dim; j > i; --j)
+                    idx += $" / dim{j}";
+
+                if (i > 1)
+                    idx += $" % dim{i}";
+
+                WriteLine($"            int index{i} = {idx};");
+            }
+#>
+
+            reshaped[<#=string.Join(", ", r(1, dim).Select(i => "index" + i))#>] = items[i];
+        });
+
+        return reshaped;
+    }
+    
+    /// <summary>
+    /// Flattens the given <#=dim#>-dimensional array into a one-dimensional array using the given sizes for each dimension.
+    /// </summary>
+    /// <typeparam name="T">The generic element type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="array">The <#=dim#>-dimensional input array.</param>
+    /// <returns>The flattened one-dimensional array.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T[] Flatten<T>(this T[<#=new string(',', dim - 1)#>] array)
+    {
+<#
+        for (int i = 1; i <= dim; ++i)
+            WriteLine($"        int dim{i} = array.GetLength({i});");
+#>
+        T[] flattened = new T[<#=string.Join(" * ", r(1, dim).Select(i => "dim" + i))#>];
+
+        Parallel.For(0, flattened.Length, i => {
+<#
+            for (int i = 1; i <= dim; ++i)
+            {
+                string idx = "i";
+
+                for (int j = dim; j > i; --j)
+                    idx += $" / dim{j}";
+
+                if (i > 1)
+                    idx += $" % dim{i}";
+#>
+            int index<#=i#> = <#=idx#>;
+<#
+            }
+#>
+
+            flattened[i] = array[<#=string.Join(", ", r(1, dim).Select(i => "index" + i))#>];
+        });
+
+        return flattened;
+    }
+<#
+            for (int outdim = 2; outdim <= dim; ++outdim)
+            {
+#>
+
+    /// <summary>
+    /// Reshapes the given <#=dim#>-dimensional array into a <#=outdim#>-dimensional one using the given sizes for each dimension.
+    /// </summary>
+    /// <typeparam name="T">The generic element type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="array">The <#=dim#>-dimensional input array.</param>
+    /// <returns>The reshaped <#=outdim#>-dimensional array.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T[<#=new string(',', outdim - 1)#>] Reshape<T>(this T[<#=new string(',', dim - 1)#>] array, <#=string.Join(", ", r(1, outdim).Select(i => "int dim" + i))#>)
+    {
+<#
+        for (int i = 1; i <= dim; ++i)
+            WriteLine($"        int indim{i} = array.GetLength({i});");
+#>
+        int insize = <#=string.Join(" * ", r(1, dim).Select(i => "indim" + i))#>;
+        int outsize = <#=string.Join(" * ", r(1, outdim).Select(i => "dim" + i))#>;
+
+        if (outsize > insize)
+            throw new ArgumentException($"The given input collection has a length of {insize} (= {<#=string.Join("} x {", r(1, dim).Select(i => "indim" + i))#>}), which is less than the required length of {outsize} = {<#=string.Join("} x {", r(1, outdim).Select(i => "dim" + i))#>}.", nameof(array));
+
+        T[<#=new string(',', outdim - 1)#>] reshaped = new T[<#=string.Join(", ", r(1, outdim).Select(i => "dim" + i))#>];
+
+        Parallel.For(0, outsize, i => {
+<#
+            for (int i = 1; i <= outdim; ++i)
+            {
+                string idx = "i";
+
+                for (int j = outdim; j > i; --j)
+                    idx += $" / dim{j}";
+
+                if (i > 1)
+                    idx += $" % dim{i}";
+
+                WriteLine($"            int outindex{i} = {idx};");
+            }
+
+            for (int i = 1; i <= dim; ++i)
+            {
+                string idx = "i";
+
+                for (int j = dim; j > i; --j)
+                    idx += $" / indim{j}";
+
+                if (i > 1)
+                    idx += $" % indim{i}";
+
+                WriteLine($"            int inindex{i} = {idx};");
+            }
+#>
+
+            reshaped[<#=string.Join(", ", r(1, outdim).Select(i => "outindex" + i))#>] = array[<#=string.Join(", ", r(1, dim).Select(i => "inindex" + i))#>];
+        });
+
+        return reshaped;
+    }
+<#
+            }
+        }
     }
 #>
 }
