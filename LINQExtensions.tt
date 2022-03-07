@@ -267,6 +267,47 @@ public static unsafe partial class LINQ
     public static void InvokeAction<<#=types#>>(void* pointer<#=apars#>) =>
         ToActionPointer<<#=types#>>(pointer)(<#=aargs#>);
 
+    /// <summary>
+    /// Maps the given <#=dim + 1#>-dimensional array from the generic element type <typeparamref name="T"/> to the generic element type <typeparamref name="U"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <typeparam name="U">The generic type parameter <typeparamref name="U"/>.</typeparam>
+    /// <param name="array">The input <#=dim + 1#>-dimensional array.</param>
+    /// <param name="map">The mapping function.</param>
+    /// <returns>The resulting <#=dim + 1#>-dimensional array.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U[<#=new string(',', dim)#>] Select<T, U>(this T[<#=new string(',', dim)#>] array, Func<T, U> map)
+    {
+<#
+        for (int i = 0; i <= dim; ++i)
+            WriteLine($"        int dim{i} = array.GetLength({i});");
+#>
+        U[<#=new string(',', dim)#>] result = new U[<#=string.Join(", ", r(0, dim + 1).Select(i => "dim" + i))#>];
+
+        Parallel.For(0, <#=string.Join(" * ", r(0, dim + 1).Select(i => "dim" + i))#>, i => {
+<#
+            for (int i = 0; i <= dim; ++i)
+            {
+                string idx = "i";
+
+                for (int j = dim; j > i; --j)
+                    idx += $" / dim{j}";
+
+                if (i > 0)
+                    idx += $" % dim{i}";
+
+                WriteLine($"            int index{i} = {idx};");
+            }
+
+            string map_idx = string.Join(", ", r(0, dim + 1).Select(i => "index" + i));
+#>
+
+            result[<#=map_idx#>] = map(array[<#=map_idx#>]);
+        });
+
+        return result;
+    }
+
 <#
         if (dim >= 2)
         {
