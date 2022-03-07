@@ -1,15 +1,17 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections;
+using System.Threading.Tasks;
+using System.Threading;
 using System.Linq;
 using System;
 
-using static System.Math;
-
 namespace Unknown6656.Generics;
+
+using static Math;
 
 
 /// <summary>
@@ -270,6 +272,67 @@ public static partial class LINQ
 
         return count;
     }
+
+    public static int MaxIndex<T>(this IEnumerable<T> collection)
+        where T : IComparable<T> => collection.MaxIndex(id);
+
+    public static int MaxIndex<T, U>(this IEnumerable<T> collection, Func<T, U> selector)
+        where U : IComparable<U>
+    {
+        U[] array = collection.ToArray(selector);
+        U max = array.Max();
+
+        return array.IndexOf(max);
+    }
+
+    public static int MinIndex<T>(this IEnumerable<T> collection)
+        where T : IComparable<T> => collection.MinIndex(id);
+
+    public static int MinIndex<T, U>(this IEnumerable<T> collection, Func<T, U> selector)
+        where U : IComparable<U>
+    {
+        U[] array = collection.ToArray(selector);
+        U min = array.Min();
+
+        return array.IndexOf(min);
+    }
+
+    public static int IndexOf<T>(this IEnumerable<T> collection, T item)
+    {
+        T[] array = collection as T[] ?? collection.ToArray();
+
+        if (array.Length < 512)
+            for (int i = 0; i < array.Length; ++i)
+            {
+                if (Equals(array[i], item))
+                    return i;
+            }
+        else
+        {
+            ConcurrentQueue<int> index = new();
+            CancellationTokenSource source = new();
+            ParallelOptions options = new()
+            {
+                CancellationToken = source.Token,
+            };
+
+            Parallel.For(0, array.Length, options, i =>
+            {
+                if (!source.IsCancellationRequested && Equals(array[i], item))
+                {
+                    source.Cancel();
+                    index.Enqueue(i);
+                }
+            });
+
+            if (index.TryDequeue(out int i))
+                return i;
+        }
+
+        return -1;
+    }
+
+    public static int LastIndexOf<T>(this IEnumerable<T> collection, T item) => collection.Reverse().IndexOf(item);
 
     /// <summary>
     /// Swaps the elements of the given tuple.
