@@ -149,6 +149,8 @@ public static unsafe partial class LINQ
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static delegate*<void> ToActionPointer(void* pointer) => (delegate*<void>)pointer;
 
+    public static Action ToAction(delegate*<void> pointer) => () => pointer();
+
     /// <summary>
     /// Invokes the given <see langword="void"/>-pointer as a method with the following signature:
     /// <para/>
@@ -215,6 +217,14 @@ public static unsafe partial class LINQ
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static delegate*<<#=types#>, void> ToActionPointer<<#=types#>>(void* pointer) =>
         (delegate*<<#=types#>, void>)pointer;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Func<<#=types#>> ToFunction<<#=types#>>(delegate*<<#=types#>> pointer) =>
+        new((<#=fargs#>) => pointer(<#=fargs#>));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Action<<#=types#>> ToAction<<#=types#>>(delegate*<<#=types#>, void> pointer) =>
+        new((<#=aargs#>) => pointer(<#=aargs#>));
 
     /// <summary>
     /// Invokes the given <see langword="void"/>-pointer with the given arguments as a method with the following signature:
