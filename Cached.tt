@@ -20,10 +20,22 @@ namespace Unknown6656.Generics;
 
 <#const string default_dict = "DelayedCachedDictionary";#>
 
+/// <summary>
+/// Represents a generic function cache, which internally stores the results of function executions and recalls them when needed.
+/// The cache essentially turns a given function into it's lazy variant, which only once invokes the underlying function for each given parameter.
+/// All subsequent calls with the same parameters are replaced by look-ups using an dictionary.
+/// </summary>
 public static partial class FuncCache
 {
-    // public const string DefaultDictionaryCacheName = nameof(<#=default_dict#><,>);
-
+    /// <summary>
+    /// Returns the <see cref="Type"/> information for the default dictionary datastructure, which is used for the generalized function caches.
+    /// <para/>
+    /// The type defaults to <see cref="<#=default_dict#>{K,V}"/>.
+    /// <para/>
+    /// If you want to change this type, you either have to provide a custom Dictionary to the <typeparamref name="TDict"/> generic parameter of the type <see cref="_FuncCache{TDict, TKey0, Value}"/>.
+    /// Otherwise, you'll have to recompile "Unknown6656.<see cref="Unknown6656.Generics"/>" with your custom implementation.
+    /// Please refer to <a href="https://github.com/Unknown6656-Megacorp/Unknown6656.Generics/blob/master/Cached.tt">Cached.tt</a>.
+    /// </summary>
     public static Type DefaultDictionaryCacheType { get; } = typeof(<#=default_dict#><,>);
 }
 
@@ -40,7 +52,7 @@ public static partial class FuncCache
 
     IEnumerable<int> r(int f, int t) => Enumerable.Range(f, t);
 
-    for (int dim = 1; dim <= maxsize; ++dim)
+    for (int dim = 1; dim < maxsize; ++dim)
     {
         string argnames = string.Join(", ", r(0, dim).Select(i => "key" + i));
         string typenames = string.Join(", ", r(0, dim).Select(i => "TKey" + i));
@@ -60,6 +72,10 @@ public static partial class FuncCache
 /// <typeparam name="TValue">The function's generic return type.</typeparam>
 public class _FuncCache<TDict, <#=typenames#>, TValue>
     where TDict : IDictionary<<#=dicttypenames#>, TValue>, new()
+<#
+        if (dim == 1)
+            WriteLine("    where TKey0 : notnull");
+#>
 {
     /// <summary>
     /// The function to be cached.
@@ -100,7 +116,7 @@ public class _FuncCache<TDict, <#=typenames#>, TValue>
     /// </summary>
 <#
         for (int i = 0; i < dim; ++i)
-            WriteLine($"    /// <param name=\"key{i}\">The function argument no. {i}.</typeparam>");
+            WriteLine($"    /// <param name=\"key{i}\">The function argument no. {i}.</param>");
 #>
     /// <returns>The function's return value. This value will be fetched from the internal look-up table if the function has already once been called with the exact same arguments.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -119,35 +135,56 @@ public class _FuncCache<TDict, <#=typenames#>, TValue>
     /// </summary>
     public void ClearCache() => Cache.Clear();
 
+    /// <inheritdoc/>
     public override string ToString() => $"[Cached: {CacheSize} entries] {<#=string.Join("} x {", r(0, dim).Select(i => $"typeof(TKey{i})"))#>} -> {typeof(TValue)}";
 
+    /// <inheritdoc cref="_FuncCache{TDict, <#=typenames#>, TValue}._FuncCache(Func{<#=typenames#>, TValue})"/>
     public static implicit operator _FuncCache<TDict, <#=typenames#>, TValue>(Func<<#=typenames#>, TValue> function) => new(function);
 
+    /// <inheritdoc cref="Cache"/>
+    /// <summary>
+    /// Returns the underlying cache of the given cached function.
+    /// </summary>
+    /// <param name="cached">The cached function.</param>
     public static implicit operator TDict(_FuncCache<TDict, <#=typenames#>, TValue> cached) => cached.Cache;
 
+    /// <inheritdoc cref="Function"/>
+    /// <summary>
+    /// Returns the underlying function of the given cached function.
+    /// </summary>
+    /// <param name="cached">The cached function.</param>
     public static implicit operator Func<<#=typenames#>, TValue>(_FuncCache<TDict, <#=typenames#>, TValue> cached) => cached.Function;
 }
 
 /// <inheritdoc/>
 public class FuncCache<<#=typenames#>, TValue>
     : _FuncCache<<#=default_dict#><<#=dicttypenames#>, TValue>, <#=typenames#>, TValue>
+<#
+        if (dim == 1)
+            WriteLine("    where TKey0 : notnull");
+#>
 {
+    /// <inheritdoc cref="_FuncCache{TDict, <#=typenames#>, TValue}._FuncCache(Func{<#=typenames#>, TValue})"/>
     public FuncCache(Func<<#=typenames#>, TValue> function)
         : base(function)
     {
     }
 
+    /// <inheritdoc cref="_FuncCache{TDict, <#=typenames#>, TValue}._FuncCache(delegate*{<#=typenames#>, TValue})"/>
     public unsafe FuncCache(delegate*<<#=typenames#>, TValue> function_pointer)
         : base(function_pointer)
     {
     }
 
+    /// <inheritdoc cref="FuncCache{<#=typenames#>, TValue}.FuncCache(Func{<#=typenames#>, TValue})"/>
     public static implicit operator FuncCache<<#=typenames#>, TValue>(Func<<#=typenames#>, TValue> function) => new(function);
 }
 
 public static partial class FuncCache
 {
-    public static FuncCache<<#=typenames#>, TValue> Cached<<#=typenames#>, TValue>(this Func<<#=typenames#>, TValue> function) => new(function);
+    /// <inheritdoc cref="FuncCache{<#=typenames#>, TValue}.FuncCache(Func{<#=typenames#>, TValue})"/>
+    public static FuncCache<<#=typenames#>, TValue> Cached<<#=typenames#>, TValue>(this Func<<#=typenames#>, TValue> function)
+        <#=dim == 1 ? "where TKey0 : notnull " : ""#>=> new(function);
 }
 
 <#
