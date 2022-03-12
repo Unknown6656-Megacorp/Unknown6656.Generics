@@ -83,13 +83,13 @@ public class DelayedQueue<T>
     private async Task SleepOrReset(bool sleep)
     {
         if (sleep)
-            await Task.WaitAll(
+            await Task.WhenAll(
                 Task.Delay(_timeout),
                 Task.Factory.StartNew(delegate
                 {
                     lock (_mutex)
                         _timeout = Math.Min(_max_timeout, (int)Math.Round(_timeout * _timeout_increment));
-                }).ConfigureAwait(false)
+                })
             );
         else
             lock (_mutex)
@@ -133,7 +133,7 @@ public class DelayedCachedDictionary<TKey, TValue>
 
     public IEqualityComparer<TKey> KeyEqualityComparer { get; }
 
-    public TValue this[TKey key]
+    public TValue? this[TKey key]
     {
         get => _dictionary[key];
         set => Add(key, value);
@@ -141,8 +141,8 @@ public class DelayedCachedDictionary<TKey, TValue>
 
     public object? this[object key]
     {
-        set => this[(TKey)key] = value;
-        get => this[(TKey)key] as TValue;
+        set => this[(TKey)key] = (TValue?)value;
+        get => this[(TKey)key];
     }
 
     public int Count => _dictionary.Count;
@@ -173,22 +173,22 @@ public class DelayedCachedDictionary<TKey, TValue>
     {
     }
 
-    public DelayedCachedDictionary(IDictionary<TKey, TValue> dictionary)
+    public DelayedCachedDictionary(IDictionary<TKey, TValue?> dictionary)
         : this(dictionary as IEnumerable<KeyValuePair<TKey, TValue>>)
     {
     }
 
-    public DelayedCachedDictionary(IDictionary<TKey, TValue> dictionary, IEqualityComparer<TKey>? comparer)
+    public DelayedCachedDictionary(IDictionary<TKey, TValue?> dictionary, IEqualityComparer<TKey>? comparer)
         : this(dictionary as IEnumerable<KeyValuePair<TKey, TValue>>, comparer)
     {
     }
 
-    public DelayedCachedDictionary(IEnumerable<KeyValuePair<TKey, TValue>> collection)
+    public DelayedCachedDictionary(IEnumerable<KeyValuePair<TKey, TValue?>> collection)
         : this(collection, DefaultKeyEqualityComparer)
     {
     }
 
-    public DelayedCachedDictionary(IEnumerable<KeyValuePair<TKey, TValue>> collection, IEqualityComparer<TKey>? comparer)
+    public DelayedCachedDictionary(IEnumerable<KeyValuePair<TKey, TValue?>> collection, IEqualityComparer<TKey>? comparer)
         : this(collection.ToList(), comparer)
     {
     }
@@ -208,22 +208,22 @@ public class DelayedCachedDictionary<TKey, TValue>
     {
     }
 
-    private DelayedCachedDictionary(List<KeyValuePair<TKey, TValue>> pairs, IEqualityComparer<TKey>? comparer)
+    private DelayedCachedDictionary(List<KeyValuePair<TKey, TValue?>> pairs, IEqualityComparer<TKey>? comparer)
     {
         _dictionary = new(Environment.ProcessorCount, pairs.Capacity, comparer);
         _running = true;
         _disposed = false;
-        _add_queue = new(kvp => _dictionary[kvp.Key] = kvp.Value, ref _running, 1, 500, 2);
-        _remove_queue = new(kvp => _dictionary.TryRemove(kvp, out _), ref _running, 10, 1000, 2);
+        _add_queue = new(kvp => _dictionary[kvp.Key] = kvp.Value, new(ref _running), 1, 500, 2);
+        _remove_queue = new(kvp => _dictionary.TryRemove(kvp, out _), new(ref _running), 10, 1000, 2);
     }
 
     ~DelayedCachedDictionary() => Dispose(false);
 
-    public void Add(TKey key, TValue value) => Add(new(key, value));
+    public void Add(TKey key, TValue? value) => Add(new(key, value));
 
-    public void Add(object key, object? value) => Add(key as TKey, value as TValue);
+    public void Add(object key, object? value) => Add((TKey)key, (TValue?)value);
 
-    public void Add(KeyValuePair<TKey, TValue> item) => _add_queue.Enqueue(item);
+    public void Add(KeyValuePair<TKey, TValue?> item) => _add_queue.Enqueue(item);
 
     public void Clear() => Keys.ToList().Do(Remove);
 
@@ -232,8 +232,9 @@ public class DelayedCachedDictionary<TKey, TValue>
     public void CopyTo(Array array, int index)
     {
         List<KeyValuePair<TKey, TValue>> copy = _dictionary.ToList();
+        IList array_list = array;
 
-        Parallel.For(0, copy.Count, i => array[i + index] = copy[i]);
+        Parallel.For(0, copy.Count, i => array_list[i + index] = copy[i]);
     }
 
     public bool Remove(TKey key)
@@ -248,21 +249,21 @@ public class DelayedCachedDictionary<TKey, TValue>
 
     public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value) => _dictionary.TryGetValue(key, out value);
 
-    public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => _dictionary.GetEnumerator();
+    public IEnumerator<KeyValuePair<TKey, TValue?>> GetEnumerator() => _dictionary.GetEnumerator();
 
     public bool Contains(object key) => ContainsKey((TKey)key);
 
-    public bool Contains(KeyValuePair<TKey, TValue> item) => ContainsKey(item.Key);
+    public bool Contains(KeyValuePair<TKey, TValue?> item) => ContainsKey(item.Key);
 
-    public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) => CopyTo(array as Array, arrayIndex);
+    public void CopyTo(KeyValuePair<TKey, TValue?>[] array, int arrayIndex) => CopyTo(array as Array, arrayIndex);
 
-    public bool Remove(KeyValuePair<TKey, TValue> item) => Remove(item.Key);
+    public bool Remove(KeyValuePair<TKey, TValue?> item) => Remove(item.Key);
 
     public void Remove(object key) => Remove((TKey)key);
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    IDictionaryEnumerator IDictionary.GetEnumerator() => new DictionaryEnumerator(GetEnumerator());
+    IDictionaryEnumerator IDictionary.GetEnumerator() => new DictionaryEnumerator<TKey, TValue?>(GetEnumerator());
 
     protected virtual void Dispose(bool managed)
     {
@@ -289,10 +290,11 @@ public class DelayedCachedDictionary<TKey, TValue>
 
 public class DictionaryEnumerator<TKey, TValue>
     : IDictionaryEnumerator
+    where TKey : notnull
 {
     public IEnumerator<KeyValuePair<TKey, TValue>> Enumerator { get; }
 
-    public DictionaryEntry Entry => new DictionaryEntry(Enumerator.Current.Key, Enumerator.Current.Value);
+    public DictionaryEntry Entry => new(Enumerator.Current.Key, Enumerator.Current.Value);
 
     public object Key => Enumerator.Current.Key;
 
@@ -301,7 +303,7 @@ public class DictionaryEnumerator<TKey, TValue>
     public object Current => Entry;
 
 
-    public MyDictionaryEnumerator(IEnumerator<KeyValuePair<TKey, TValue>> enumerator) => Enumerator = enumerator;
+    public DictionaryEnumerator(IEnumerator<KeyValuePair<TKey, TValue>> enumerator) => Enumerator = enumerator;
 
     public bool MoveNext() => Enumerator.MoveNext();
 
