@@ -51,6 +51,10 @@
       <PackageReference Include="Unknown6656.IndexableProperties" Version="1.0.2" />
     </ItemGroup>
     <ItemGroup>
+        <None Update="Cached.tt">
+          <Generator>TextTemplatingFileGenerator</Generator>
+          <LastGenOutput>Cached.cs</LastGenOutput>
+        </None>
         <None Update="LINQExtensions.tt">
             <Generator>TextTemplatingFileGenerator</Generator>
             <LastGenOutput>LINQExtensions.cs</LastGenOutput>
@@ -60,6 +64,16 @@
         <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
     </ItemGroup>
     <ItemGroup>
+        <Compile Update="Cache.cs">
+          <DesignTime>True</DesignTime>
+          <AutoGen>True</AutoGen>
+          <DependentUpon>Cache.tt</DependentUpon>
+        </Compile>
+        <Compile Update="Cached.cs">
+          <DesignTime>True</DesignTime>
+          <AutoGen>True</AutoGen>
+          <DependentUpon>Cached.tt</DependentUpon>
+        </Compile>
         <Compile Update="LINQExtensions.cs">
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
