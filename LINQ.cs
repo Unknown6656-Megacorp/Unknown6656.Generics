@@ -856,6 +856,75 @@ public static partial class LINQ
         return true;
     }
 
+    /// <summary>
+    /// Tries to execute the given <paramref name="action"/> for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void TryDo<T, _>(this IEnumerable<T> collection, Func<T, _> action)
+    {
+        foreach (T item in collection)
+            TryDo(() => action(item));
+    }
+
+    /// <summary>
+    /// Tries to execute the given <paramref name="action"/> for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe void TryDo<T, _>(this IEnumerable<T> collection, delegate*<T, _> action)
+    {
+        foreach (T item in collection)
+            TryDo(() => action(item));
+    }
+
+    /// <summary>
+    /// Executes the given <paramref name="action"/> for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Do<T, _>(this IEnumerable<T> collection, Func<T, _> action)
+    {
+        foreach (T item in collection)
+            action(item);
+    }
+
+    /// <summary>
+    /// Executes the given <paramref name="action"/> for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe void Do<T, _>(this IEnumerable<T> collection, delegate*<T, _> action)
+    {
+        foreach (T item in collection)
+            action(item);
+    }
+
+    /// <summary>
+    /// Executes the given <paramref name="action"/> in parallel for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DoInParallel<T, _>(this IEnumerable<T> collection, Func<T, _> action) => Parallel.ForEach(collection, x => action(x));
+
+    /// <summary>
+    /// Executes the given <paramref name="action"/> in parallel for each element in the given <paramref name="collection"/>.
+    /// </summary>
+    /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <param name="collection">The collections of items.</param>
+    /// <param name="action">The function to be executed on each item in the given collection.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DoInParallel<T, _>(this IEnumerable<T> collection, Func<T, _> action, ParallelOptions options) => Parallel.ForEach(collection, options, x => action(x));
 
     /// <summary>
     /// Tries to execute the given <paramref name="action"/> for each element in the given <paramref name="collection"/>.
