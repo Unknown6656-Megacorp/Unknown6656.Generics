@@ -366,7 +366,7 @@ public static unsafe partial class LINQ
     {
 <#
         for (int i = 1; i <= dim; ++i)
-            WriteLine($"        int dim{i} = array.GetLength({i});");
+            WriteLine($"        int dim{i} = array.GetLength({i - 1});");
 #>
         T[] flattened = new T[<#=string.Join(" * ", r(1, dim).Select(i => "dim" + i))#>];
 
@@ -408,7 +408,7 @@ public static unsafe partial class LINQ
     {
 <#
         for (int i = 1; i <= dim; ++i)
-            WriteLine($"        int indim{i} = array.GetLength({i});");
+            WriteLine($"        int indim{i} = array.GetLength({i - 1});");
 #>
         int insize = <#=string.Join(" * ", r(1, dim).Select(i => "indim" + i))#>;
         int outsize = <#=string.Join(" * ", r(1, outdim).Select(i => "dim" + i))#>;

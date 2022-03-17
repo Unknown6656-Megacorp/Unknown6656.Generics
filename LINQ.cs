@@ -581,15 +581,6 @@ public static partial class LINQ
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static IEnumerable<T> DistinctBy<T, U>(this IEnumerable<T> coll, Func<T, U> selector)
-    {
-        EqualityComparer<U> cmp_u = EqualityComparer<U>.Default;
-        CustomEqualityComparer<T> cmp_t = new((t1, t2) => cmp_u.Equals(selector(t1), selector(t2)));
-
-        return coll.Distinct(cmp_t);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Dictionary<T, U> ToDictionary<T, U>(this IEnumerable<Tuple<T, U>> dictionary) where T : notnull => dictionary.ToDictionary(t => t.Item1, t => t.Item2);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
