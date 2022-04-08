@@ -14,31 +14,6 @@ using System.Runtime.CompilerServices;
 namespace Unknown6656.Generics;
 
 
-public readonly unsafe struct Ref<T>
-    where T : unmanaged
-{
-    public readonly T* Pointer;
-
-    public T Value => *Pointer;
-
-    public ref T Reference => ref Unsafe.AsRef<T>(Pointer);
-
-
-    public Ref(T* pointer) => Pointer = pointer;
-
-    public Ref(T** pointer)
-        : this(*pointer)
-    {
-    }
-
-    public Ref(ref T variable)
-        : this((T*)Unsafe.AsPointer(ref variable))
-    {
-    }
-
-    public static implicit operator T(Ref<T> @ref) => *@ref.Pointer;
-}
-
 public class DelayedQueue<T>
     : IDisposable
 {
