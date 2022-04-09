@@ -47,6 +47,18 @@ public static partial class LINQ
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T Do<T>(this Func<T> func) => func.Invoke();
 
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //public static void Do<T>(this T value, Action<T>? func) => func?.Invoke(value);
+
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //public static unsafe void Do<T>(this T value, delegate*<T, void> func) => func(value);
+
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //public static U Do<T, U>(this T value, Func<T, U> func) => func(value);
+
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //public static unsafe U Do<T, U>(this T value, delegate*<T, U> func) => func(value);
+
     /// <summary>
     /// Executes the given function pointer if it is not a <see langword="null"/>-pointer.
     /// This method may be useful in <see langword="switch"/>-expressions or function wrapping.
@@ -316,14 +328,20 @@ public static partial class LINQ
                 CancellationToken = source.Token,
             };
 
-            Parallel.For(0, array.Length, options, i =>
+            try
             {
-                if (!source.IsCancellationRequested && Equals(array[i], item))
+                Parallel.For(0, array.Length, options, i =>
                 {
-                    source.Cancel();
-                    index.Enqueue(i);
-                }
-            });
+                    if (!source.IsCancellationRequested && Equals(array[i], item))
+                    {
+                        index.Enqueue(i);
+                        source.Cancel();
+                    }
+                });
+            }
+            catch (OperationCanceledException)
+            {
+            }
 
             if (index.TryDequeue(out int i))
                 return i;
