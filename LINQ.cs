@@ -788,6 +788,19 @@ public static partial class LINQ
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IEnumerable<T> Rotate<T>(this IEnumerable<T> collection, int count)
+    {
+        T[] array = collection as T[] ?? collection.ToArray();
+        count = ((count % array.Length) + array.Length) % array.Length;
+
+        return count is 0 ? array : array[count..].Concat(array[..count]);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U AggregateCast<T, U>(this IEnumerable<T> coll, Func<U, U, U> accumulator)
+        where T : U => coll.Cast<U>().Aggregate<U>(accumulator);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T AggregateNonEmpty<T>(this IEnumerable<T> coll, Func<T, T, T> accumulator/*, U init = default*/)
     {
         List<T>? list = coll?.ToList();
