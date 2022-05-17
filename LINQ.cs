@@ -854,6 +854,28 @@ public static partial class LINQ
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IEnumerable<T> Propagate<T>(this T start, Func<T, T> next, int max_count)
+    {
+        T current = start;
+
+        yield return current;
+
+        while (max_count --> 0)
+            yield return current = next(current);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IEnumerable<T> Propagate<T>(this T start, Func<T, (T next, bool @continue)> next, int max_count) => start.Propagate(t =>
+    {
+        (T res, bool cont) = next(t);
+
+        return (res, cont && max_count-- > 0);
+    });
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IEnumerable<T> Propagate<T>(this T start, Func<T, T> next, Predicate<T> @while, int max_count) => start.Propagate(next, e => @while(e) && max_count --> 0);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Are<T>(this IEnumerable<T> xs, IEnumerable<T> ys, IEqualityComparer<T> comparer) => xs.Are(ys, comparer.Equals);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
