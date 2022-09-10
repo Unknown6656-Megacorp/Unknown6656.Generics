@@ -8,11 +8,27 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Linq;
 using System;
+using System.Reflection;
 
 namespace Unknown6656.Generics;
 
 using static Math;
 
+
+/// <summary>
+/// A delegate which accepts a pointer of <typeparamref name="T"/> as single parameter and which does not return any value.
+/// </summary>
+/// <typeparam name="T">The generic pointer base type.</typeparam>
+/// <param name="pointer">A pointer of the type <typeparamref name="T"/>.</param>
+public unsafe delegate void PointerCallback<T>(T* pointer) where T : unmanaged;
+
+/// <summary>
+/// A delegate which accepts a pointer of <typeparamref name="T"/> as single parameter and which returns a value of the type <typeparamref name="U"/>.
+/// </summary>
+/// <typeparam name="T">The generic pointer base type.</typeparam>
+/// <typeparam name="U">The generic return type.</typeparam>
+/// <param name="pointer">A pointer of the type <typeparamref name="T"/>.</param>
+public unsafe delegate U PointerCallback<T, U>(T* pointer) where T : unmanaged;
 
 /// <summary>
 /// A static class containing a set of LINQ (language-integrated queries) methods and extensions.
@@ -28,6 +44,46 @@ public static partial class LINQ
     /// </summary>
     public static Action NoOp { get; } = new(delegate { });
 
+    /// <summary>
+    /// Returns the internal array from the given list (by reference, not by value).
+    /// </summary>
+    /// <typeparam name="T">Generic type parameter.</typeparam>
+    /// <param name="list">List</param>
+    /// <returns>Internal array.</returns>
+    public static T[] GetInternalArray<T>(this List<T> list) => (T[])list.GetType().GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(list)!;
+
+    public unsafe static void Fixed<T>(this T[] array, PointerCallback<T> callback) where T : unmanaged
+    {
+        fixed (T* ptr = array)
+            callback(ptr);
+    }
+
+    public unsafe static U Fixed<T, U>(this T[] array, PointerCallback<T, U> callback) where T : unmanaged
+    {
+        fixed (T* ptr = array)
+            return callback(ptr);
+    }
+
+    public static void Fixed<T>(this List<T> list, PointerCallback<T> callback) where T : unmanaged => Fixed(list.GetInternalArray(), callback);
+
+    public static U Fixed<T, U>(this List<T> list, PointerCallback<T, U> callback) where T : unmanaged => Fixed(list.GetInternalArray(), callback);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T[] Resize<T>(this T[] array, int new_size)
+    {
+        Array.Resize(ref array, new_size);
+
+        return array;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T With<T>(this T value, Action<T> func)
+        where T : class
+    {
+        func(value);
+
+        return value;
+    }
 
     /// <summary>
     /// Executes the given function or lambda expression if it is not <see langword="null"/>.
@@ -763,8 +819,7 @@ public static partial class LINQ
     {
         U[] dest = new U[(int)Ceiling(byte_count / (float)sizeof(U))];
 
-        fixed (U* ptrd = dest)
-            source.CopyTo(ptrd, byte_count);
+        dest.Fixed(ptrd => source.CopyTo(ptrd, byte_count));
 
         return dest;
     }
@@ -775,17 +830,14 @@ public static partial class LINQ
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe void CopyTo<T, U>(this T[] source, U* target, int byte_count)
         where T : unmanaged
-        where U : unmanaged
-    {
-        fixed (T* ptrs = source)
+        where U : unmanaged => source.Fixed(ptrs =>
         {
             byte* bptrd = (byte*)target;
             byte* bptrs = (byte*)ptrs;
 
             for (int i = 0; i < byte_count; ++i)
                 bptrd[i] = bptrs[i];
-        }
-    }
+        });
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IEnumerable<T> Rotate<T>(this IEnumerable<T> collection, int count)
