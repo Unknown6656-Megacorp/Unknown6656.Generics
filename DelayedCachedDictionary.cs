@@ -25,7 +25,7 @@ public class DelayedQueue<T>
     private volatile int _timeout;
 
     public bool IsDisposed { get; private set; } = false;
-    public ConcurrentQueue<T> Queue { get; }
+    public ConcurrentQueue<T> Queue { get; } = new();
 
 
     public DelayedQueue(Action<T> on_dequeue, Ref<bool> running, int min_timeout, int max_timeout, float timeout_increment = 2)
@@ -42,7 +42,7 @@ public class DelayedQueue<T>
             {
                 bool sleep = true;
 
-                while (Queue.TryDequeue(out T value))
+                while (Queue.TryDequeue(out T? value))
                 {
                     sleep = false;
                     on_dequeue(value);

@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
@@ -50,7 +50,8 @@ public static partial class LINQ
     /// <typeparam name="T">Generic type parameter.</typeparam>
     /// <param name="list">List</param>
     /// <returns>Internal array.</returns>
-    public static T[] GetInternalArray<T>(this List<T> list) => (T[])list.GetType().GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(list)!;
+    public static T[] GetInternalArray<T>(this List<T> list) =>
+        (list.GetType()?.GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(list) as T[]) ?? throw new InvalidProgramException($"This function depends on the type {typeof(List<>)} having a field '_items'.");
 
     public unsafe static void Fixed<T>(this T[] array, PointerCallback<T> callback) where T : unmanaged
     {
