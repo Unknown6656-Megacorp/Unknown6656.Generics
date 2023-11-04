@@ -402,6 +402,10 @@ public static unsafe partial class LINQ
     /// </summary>
     /// <typeparam name="T">The generic element type parameter <typeparamref name="T"/>.</typeparam>
     /// <param name="array">The <#=dim#>-dimensional input array.</param>
+<#
+                for (int i = 1; i <= outdim; ++i)
+                    WriteLine($"    /// <param name=\"dim{i}\">The size of dimension {i}.</param>");
+#>
     /// <returns>The reshaped <#=outdim#>-dimensional array.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T[<#=new string(',', outdim - 1)#>] Reshape<T>(this T[<#=new string(',', dim - 1)#>] array, <#=string.Join(", ", r(1, outdim).Select(i => "int dim" + i))#>)

@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
@@ -461,6 +461,7 @@ public static partial class LINQ
 
     /// <inheritdoc cref="string.Join{T}(string?, IEnumerable{T})"/>
     /// <param name="collection">The collection to be joined.</param>
+    /// <param name="separator">The separator string.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string StringJoin<T>(this IEnumerable<T> collection, string separator) => string.Join(separator, collection);
 
