@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
+        <!--<TargetFramework>netcoreapp3.1</TargetFramework>-->
 
         <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
@@ -41,7 +42,7 @@
         <AssemblyVersion>$([System.IO.File]::ReadAllText("$(SolutionDir)version.txt"))</AssemblyVersion>
     </PropertyGroup>
     <ItemGroup>
-        <None Include="C:/Users/unknown6656/Pictures/unknown6656/unknown6656-logo-1024.png">
+        <None Include="unknown6656-logo-1024.png">
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
