@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
@@ -53,20 +53,46 @@ public static partial class LINQ
     public static T[] GetInternalArray<T>(this List<T> list) =>
         (list.GetType()?.GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(list) as T[]) ?? throw new InvalidProgramException($"This function depends on the type {typeof(List<>)} having a field '_items'.");
 
+    /// <summary>
+    /// Pins/fixes the variable <paramref name="array"/> for the duration of this method and passes the pinned pointer to <paramref name="callback"/>.
+    /// </summary>
+    /// <typeparam name="T">The array element type.</typeparam>
+    /// <param name="array">The array to be pinned.</param>
+    /// <param name="callback">The callback to be called.</param>
     public unsafe static void Fixed<T>(this T[] array, PointerCallback<T> callback) where T : unmanaged
     {
         fixed (T* ptr = array)
             callback(ptr);
     }
 
+    /// <summary>
+    /// Pins/fixes the variable <paramref name="array"/> for the duration of this method and passes the pinned pointer to <paramref name="callback"/>.
+    /// </summary>
+    /// <typeparam name="T">The array element type.</typeparam>
+    /// <typeparam name="U">The return type of the callback.</typeparam>
+    /// <param name="array">The array to be pinned.</param>
+    /// <param name="callback">The callback to be called.</param>
     public unsafe static U Fixed<T, U>(this T[] array, PointerCallback<T, U> callback) where T : unmanaged
     {
         fixed (T* ptr = array)
             return callback(ptr);
     }
 
+    /// <summary>
+    /// Pins/fixes the variable <paramref name="list"/> for the duration of this method and passes the pinned pointer to <paramref name="callback"/>.
+    /// </summary>
+    /// <typeparam name="T">The list element type.</typeparam>
+    /// <param name="list">The list to be pinned.</param>
+    /// <param name="callback">The callback to be called.</param>
     public static void Fixed<T>(this List<T> list, PointerCallback<T> callback) where T : unmanaged => Fixed(list.GetInternalArray(), callback);
 
+    /// <summary>
+    /// Pins/fixes the variable <paramref name="list"/> for the duration of this method and passes the pinned pointer to <paramref name="callback"/>.
+    /// </summary>
+    /// <typeparam name="T">The list element type.</typeparam>
+    /// <typeparam name="U">The return type of the callback.</typeparam>
+    /// <param name="list">The list to be pinned.</param>
+    /// <param name="callback">The callback to be called.</param>
     public static U Fixed<T, U>(this List<T> list, PointerCallback<T, U> callback) where T : unmanaged => Fixed(list.GetInternalArray(), callback);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -986,6 +1012,7 @@ public static partial class LINQ
     /// Executes the given <paramref name="action"/> for each element in the given <paramref name="collection"/>.
     /// </summary>
     /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <typeparam name="_"><i>(Ignored type parameter)</i></typeparam>
     /// <param name="collection">The collections of items.</param>
     /// <param name="action">The function to be executed on each item in the given collection.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -999,6 +1026,7 @@ public static partial class LINQ
     /// Executes the given <paramref name="action"/> for each element in the given <paramref name="collection"/>.
     /// </summary>
     /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <typeparam name="_"><i>(Ignored type parameter)</i></typeparam>
     /// <param name="collection">The collections of items.</param>
     /// <param name="action">The function to be executed on each item in the given collection.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1012,6 +1040,7 @@ public static partial class LINQ
     /// Executes the given <paramref name="action"/> in parallel for each element in the given <paramref name="collection"/>.
     /// </summary>
     /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <typeparam name="_"><i>(Ignored type parameter)</i></typeparam>
     /// <param name="collection">The collections of items.</param>
     /// <param name="action">The function to be executed on each item in the given collection.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1021,6 +1050,7 @@ public static partial class LINQ
     /// Executes the given <paramref name="action"/> in parallel for each element in the given <paramref name="collection"/>.
     /// </summary>
     /// <typeparam name="T">The generic type parameter <typeparamref name="T"/>.</typeparam>
+    /// <typeparam name="_"><i>(Ignored type parameter)</i></typeparam>
     /// <param name="collection">The collections of items.</param>
     /// <param name="action">The function to be executed on each item in the given collection.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

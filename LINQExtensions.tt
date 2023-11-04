@@ -218,10 +218,16 @@ public static unsafe partial class LINQ
     public static delegate*<<#=types#>, void> ToActionPointer<<#=types#>>(void* pointer) =>
         (delegate*<<#=types#>, void>)pointer;
 
+    /// <summary>
+    /// Casts the given <see langword="delegate"/>-pointer to an instance of <see cref="Func{}"/> by wrapping it using an internal lambda.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Func<<#=types#>> ToFunction<<#=types#>>(delegate*<<#=types#>> pointer) =>
         new((<#=fargs#>) => pointer(<#=fargs#>));
 
+    /// <summary>
+    /// Casts the given <see langword="delegate"/>-pointer to an instance of <see cref="Action{}"/> by wrapping it using an internal lambda.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Action<<#=types#>> ToAction<<#=types#>>(delegate*<<#=types#>, void> pointer) =>
         new((<#=aargs#>) => pointer(<#=aargs#>));
