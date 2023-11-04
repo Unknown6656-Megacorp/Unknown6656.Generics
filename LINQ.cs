@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
@@ -658,11 +658,13 @@ public static partial class LINQ
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Dictionary<T, U> ToDictionary<T, U>(this IEnumerable<Tuple<T, U>> dictionary) where T : notnull => dictionary.ToDictionary(t => t.Item1, t => t.Item2);
 
+#if !NET8_0_OR_GREATER
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Dictionary<T, U> ToDictionary<T, U>(this IEnumerable<KeyValuePair<T, U>> dictionary) where T : notnull => dictionary.ToDictionary(t => t.Key, t => t.Value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Dictionary<T, U> ToDictionary<T, U>(this IEnumerable<(T key, U value)> pairs) where T : notnull => pairs.ToDictionary(fst, snd);
+#endif
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static (T key, U value)[] FromDictionary<T, U>(this IDictionary<T, U> dictionary) => dictionary.ToArray(kvp => (kvp.Key, kvp.Value));
