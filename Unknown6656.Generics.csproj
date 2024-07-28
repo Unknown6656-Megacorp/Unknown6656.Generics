@@ -27,8 +27,8 @@
         <Company>unknown6656</Company>
         <Product>Unknown6656.Generics by Unknown6656</Product>
         <Copyright>Copyright © 2016-$([System.DateTime]::Today.ToString(yyyy)), unknown6656</Copyright>
-        <PackageProjectUrl>https://github.com/Unknown6656-Megacorp/Unknown6656.IndexableProperties</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/Unknown6656-Megacorp/Unknown6656.IndexableProperties</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/Unknown6656-Megacorp/Unknown6656.Generics</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Unknown6656-Megacorp/Unknown6656.Generics</RepositoryUrl>
         <PackageIcon>unknown6656-logo-1024.png</PackageIcon>
         <PackageTags>unknown6656;generic;generics;linq;helper;util</PackageTags>
 
