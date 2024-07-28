@@ -49,33 +49,31 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Unknown6656.IndexableProperties" Version="1.1.0" />
-      <PackageReference Include="Unknown6656.IndexableProperties" Version="1.1.0" />
-    </ItemGroup>
-    <ItemGroup>
-        <None Update="Cached.tt">
-          <Generator>TextTemplatingFileGenerator</Generator>
-          <LastGenOutput>Cached.cs</LastGenOutput>
-        </None>
-        <None Update="LINQExtensions.tt">
-            <Generator>TextTemplatingFileGenerator</Generator>
-            <LastGenOutput>LINQExtensions.cs</LastGenOutput>
-        </None>
+        <PackageReference Include="Unknown6656.IndexableProperties" Version="1.1.0" />
     </ItemGroup>
     <ItemGroup>
         <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Update="Cache.cs">
-          <DesignTime>True</DesignTime>
-          <AutoGen>True</AutoGen>
-          <DependentUpon>Cache.tt</DependentUpon>
+        <None Update="src/Cached.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>Cached.cs</LastGenOutput>
+        </None>
+        <None Update="src/LINQExtensions.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>LINQExtensions.cs</LastGenOutput>
+        </None>
+        <Compile Update="src/Cache.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>src/Cache.tt</DependentUpon>
         </Compile>
-        <Compile Update="Cached.cs">
-          <DesignTime>True</DesignTime>
-          <AutoGen>True</AutoGen>
-          <DependentUpon>Cached.tt</DependentUpon>
+        <Compile Update="src/Cached.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>Cached.tt</DependentUpon>
         </Compile>
-        <Compile Update="LINQExtensions.cs">
+        <Compile Update="src/LINQExtensions.cs">
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
             <DependentUpon>LINQExtensions.tt</DependentUpon>
