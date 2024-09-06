@@ -347,16 +347,39 @@ public static partial class LINQ
     public static V trd<T, U, V>((T, U, V v) x) => x.v;
 #pragma warning restore IDE1006
 
-    /// <summary>
-    /// Enumerates all generic enum values.
-    /// </summary>
-    /// <typeparam name="T">The enum type.</typeparam>
-    /// <returns>The enumerated enum values.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] GetEnumValues<T>() where T : Enum => Enum.GetValues(typeof(T)).Cast<object>().ToArray(v => (T)v!);
+    public static IEnumerable<T[]> SplitBy<T>(this IEnumerable<T> collection, T separator, bool return_empty_collections = true) =>
+        SplitBy(collection, separator, EqualityComparer<T>.Default, return_empty_collections);
+
+    public static IEnumerable<T[]> SplitBy<T>(this IEnumerable<T> collection, T separator, IEqualityComparer<T> compararer, bool return_empty_collections = true) =>
+        SplitBy(collection, t => compararer.Equals(t, separator), return_empty_collections);
+
+    public static IEnumerable<T[]> SplitBy<T>(this IEnumerable<T> collection, IEnumerable<T> separators, bool return_empty_collections = true) =>
+        SplitBy(collection, separators, null, return_empty_collections);
+
+    public static IEnumerable<T[]> SplitBy<T>(this IEnumerable<T> collection, IEnumerable<T> separators, IEqualityComparer<T>? compararer, bool return_empty_collections = true) =>
+        SplitBy(collection, t => separators.Contains(t, compararer), return_empty_collections);
+
+    public static IEnumerable<T[]> SplitBy<T>(this IEnumerable<T> collection, Func<T, bool> predicate, bool return_empty_collections = true)
+    {
+        List<T> current = [];
+
+        foreach (T item in collection)
+            if (predicate(item))
+            {
+                if (current.Count > 0 || return_empty_collections)
+                    yield return current.ToArray();
+
+                current.Clear();
+            }
+            else
+                current.Add(item);
+
+        if (current.Count > 0 || return_empty_collections)
+            yield return current.ToArray();
+    }
+
 
     /// <inheritdoc cref="Enumerable.Count{TSource}(IEnumerable{TSource})"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int Count(this IEnumerable? collection)
     {
         int count = 0;
