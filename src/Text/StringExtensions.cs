@@ -8,13 +8,12 @@ using System;
 using Unknown6656.Generics;
 using System.Globalization;
 
-namespace Unknown6656.Common;
+namespace Unknown6656.Generics.Text;
 
 
 public static class StringExtensions
 {
     private const string _CHARMAP_REGULAR = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-/.:(),;=*";
-    private const string _CHARMAP_BRAILLE = "⠁⠃⠉⠙⠑⠋⠛⠓⠊⠚⠅⠇⠍⠝⠕⠏⠟⠗⠎⠞⠥⠧⠺⠭⠽⠵⠠⠠⠁⠃⠉⠙⠑⠋⠛⠓⠊⠚⠅⠇⠍⠝⠕⠏⠟⠗⠎⠞⠥⠧⠺⠭⠽⠵⠼⠚⠁⠃⠉⠙⠑⠋⠛⠓⠊+⠤⠌⠲⠒⠦⠴⠂⠆=⠔";
     /* TODO : implement text conversions
      *  input:  abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-/.:(),;=*
      *          http://qaz.wtf/u/convert.cgi?text=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789%2B-%2F.%3A%28%29%2C%3B%3D*
@@ -51,7 +50,7 @@ public static class StringExtensions
     [Obsolete]
     [return: MaybeNull]
     public static T Match<T>(this string input, [MaybeNull] T @default, Dictionary<string, Func<Match, T>> patterns) =>
-        Match(input, @default, patterns.ToArray(kvp => (kvp.Key, kvp.Value)));
+        input.Match(@default, patterns.ToArray(kvp => (kvp.Key, kvp.Value)));
 
     [Obsolete]
     [return: MaybeNull]
@@ -70,7 +69,7 @@ public static class StringExtensions
 
     [return: MaybeNull]
     public static T Match<T>(this string input, [MaybeNull] T @default, Dictionary<Regex, Func<Match, T>> patterns) =>
-        Match(input, @default, patterns.ToArray(kvp => (kvp.Key, kvp.Value)));
+        input.Match(@default, patterns.ToArray(kvp => (kvp.Key, kvp.Value)));
 
     [return: MaybeNull]
     public static T Match<T>(this string input, [MaybeNull] T @default, params (Regex pattern, Func<Match, T> action)[] patterns)
@@ -108,7 +107,7 @@ public static class StringExtensions
 
     public static string TrimEnd(this string input, string trim_str, StringComparison comparison = StringComparison.CurrentCulture, int maxcount = 1)
     {
-        while (maxcount --> 0)
+        while (maxcount-- > 0)
             if (input.EndsWith(trim_str, comparison))
                 input = input[..^trim_str.Length];
             else
@@ -119,7 +118,7 @@ public static class StringExtensions
 
     public static string TrimStart(this string input, string trim_str, StringComparison comparison = StringComparison.CurrentCulture, int maxcount = 1)
     {
-        while (maxcount --> 0)
+        while (maxcount-- > 0)
             if (input.StartsWith(trim_str, comparison))
                 input = input[trim_str.Length..];
             else
@@ -251,14 +250,6 @@ public static class StringExtensions
                       .Normalize(NormalizationForm.FormKC);
     }
 
-    public static string ToBraille(this string input) => input.Select(ToBraille).StringConcat();
-
-    public static char ToBraille(this char @char) => _CHARMAP_REGULAR.IndexOf(@char) is int i && i >= 0 ? _CHARMAP_BRAILLE[i] : @char;
-
-    public static string FromBraille(this string braille) => braille.Select(FromBraille).StringConcat();
-
-    public static char FromBraille(this char braille) => _CHARMAP_BRAILLE.IndexOf(braille) is int i && i >= 0 ? _CHARMAP_REGULAR[i] : braille;
-
     public static char ToSubScript(this char c) => c switch
     {
         ',' => '⸳',
@@ -349,7 +340,7 @@ public static class StringExtensions
         _ => c,
     };
 
-    public static string? ToPunycode(this string str) => ToPunycode(str, PunycodeConfig.Default);
+    public static string? ToPunycode(this string str) => str.ToPunycode(PunycodeConfig.Default);
 
     public static string? ToPunycode(this string str, PunycodeConfig config)
     {
@@ -390,7 +381,7 @@ public static class StringExtensions
         return new(output.ToArray());
     }
 
-    public static string? FromPunycode(this string str) => FromPunycode(str, PunycodeConfig.Default);
+    public static string? FromPunycode(this string str) => str.FromPunycode(PunycodeConfig.Default);
 
     public static string? FromPunycode(this string str, PunycodeConfig config)
     {
@@ -475,7 +466,7 @@ public static class StringExtensions
         int a = (config.BASE - config.T_MIN + 1) * delta;
         int b = delta + config.SKEW;
 
-        return k + (a / b);
+        return k + a / b;
     }
 
     private static int punycode_threshold(int k, int bias, PunycodeConfig config) => k <= bias + config.T_MIN ? config.T_MIN
@@ -496,7 +487,7 @@ public static class StringExtensions
             }
             else
             {
-                int c = t + ((q - t) % (config.BASE - t));
+                int c = t + (q - t) % (config.BASE - t);
 
                 q = (q - t) / (config.BASE - t);
                 k += config.BASE;
@@ -532,7 +523,7 @@ public record class PunycodeConfig(
             throw new ArgumentException("The value must be greater than zero.", nameof(SKEW));
         else if (DAMP < 2)
             throw new ArgumentException("The value must be greater than 1.", nameof(DAMP));
-        else if ((INITIAL_BIAS % BASE) > (BASE - T_MIN))
+        else if (INITIAL_BIAS % BASE > BASE - T_MIN)
             throw new ArgumentException("INITIAL_BIAS % BASE  must be smaller or equal to  BASE - T_MIN.", nameof(INITIAL_BIAS));
     }
 }

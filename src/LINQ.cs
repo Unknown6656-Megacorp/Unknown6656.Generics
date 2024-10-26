@@ -391,8 +391,7 @@ public static partial class LINQ
         return count;
     }
 
-    public static int MaxIndex<T>(this IEnumerable<T> collection)
-        where T : IComparable<T> => collection.MaxIndex(id);
+    public static int MaxIndex<T>(this IEnumerable<T> collection) where T : IComparable<T> => MaxIndex(collection, id);
 
     public static int MaxIndex<T, U>(this IEnumerable<T> collection, Func<T, U> selector)
         where U : IComparable<U>
@@ -403,8 +402,7 @@ public static partial class LINQ
         return array.IndexOf(max);
     }
 
-    public static int MinIndex<T>(this IEnumerable<T> collection)
-        where T : IComparable<T> => collection.MinIndex(id);
+    public static int MinIndex<T>(this IEnumerable<T> collection) where T : IComparable<T> => MinIndex(collection, id);
 
     public static int MinIndex<T, U>(this IEnumerable<T> collection, Func<T, U> selector)
         where U : IComparable<U>
@@ -415,16 +413,18 @@ public static partial class LINQ
         return array.IndexOf(min);
     }
 
-    public static int IndexOf<T>(this IEnumerable<T> collection, T item)
+    public static int IndexOf<T>(this IEnumerable<T> collection, T item) => IndexWhere(collection, t => Equals(t, item));
+
+    public static int IndexWhere<T>(this IEnumerable<T> collection, Predicate<T> predicate)
     {
         T[] array = collection as T[] ?? collection.ToArray();
 
         if (array.Length < 512)
+        {
             for (int i = 0; i < array.Length; ++i)
-            {
-                if (Equals(array[i], item))
+                if (predicate(array[i]))
                     return i;
-            }
+        }
         else
         {
             ConcurrentQueue<int> index = new();
@@ -438,7 +438,7 @@ public static partial class LINQ
             {
                 Parallel.For(0, array.Length, options, i =>
                 {
-                    if (!source.IsCancellationRequested && Equals(array[i], item))
+                    if (!source.IsCancellationRequested && predicate(array[i]))
                     {
                         index.Enqueue(i);
                         source.Cancel();
@@ -456,7 +456,9 @@ public static partial class LINQ
         return -1;
     }
 
-    public static int LastIndexOf<T>(this IEnumerable<T> collection, T item) => collection.Reverse().IndexOf(item);
+    public static int LastIndexOf<T>(this IEnumerable<T> collection, T item) => LastIndexWhere(collection, t => Equals(t, item));
+
+    public static int LastIndexWhere<T>(this IEnumerable<T> collection, Predicate<T> predicate) => IndexWhere(collection.Reverse(), predicate);
 
     /// <summary>
     /// Swaps the elements of the given tuple.
@@ -485,7 +487,7 @@ public static partial class LINQ
         T[] src, dst;
         T elem;
 
-        set[0] = global::System.Array.Empty<T>();
+        set[0] = [];
 
         for (int i = 0, j, count; i < collection.Length; i++)
         {
@@ -794,7 +796,7 @@ public static partial class LINQ
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IEnumerable<IEnumerable<T>> CartesianProduct<T>(this IEnumerable<IEnumerable<T>> coll)
     {
-        IEnumerable<IEnumerable<T>> emptyProduct = new[] { Enumerable.Empty<T>() };
+        IEnumerable<IEnumerable<T>> emptyProduct = [[]];
         IEnumerable<IEnumerable<T>> result = emptyProduct;
 
         foreach (IEnumerable<T> sequence in coll)
